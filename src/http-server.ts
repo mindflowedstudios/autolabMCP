@@ -7,6 +7,7 @@ import express from 'express';
 import cors from 'cors';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { HttpServerTransport } from '@modelcontextprotocol/sdk/server/http.js';
 import { 
   CallToolRequestSchema,
   ErrorCode,
@@ -350,6 +351,19 @@ class GHLMCPHttpServer {
       }
     });
 
+    // NEW: HTTP MCP endpoint for n8n
+  this.app.post('/mcp', async (req: express.Request, res: express.Response) => {
+    try {
+      const transport = new HttpServerTransport(req, res);
+      await this.server.connect(transport);
+    } catch (error) {
+      console.error('[GHL MCP HTTP] Error on /mcp:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to process MCP request' });
+      }
+    }
+  });
+    
     // SSE endpoint for ChatGPT MCP connection
     const handleSSE = async (req: express.Request, res: express.Response) => {
       const sessionId = req.query.sessionId || 'unknown';
